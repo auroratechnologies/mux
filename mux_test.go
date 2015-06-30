@@ -5,8 +5,10 @@
 package mux
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/gorilla/context"
@@ -21,6 +23,32 @@ type routeTest struct {
 	path           string            // the expected path of the match
 	shouldMatch    bool              // whether the request is expected to match the route at all
 	shouldRedirect bool              // whether the request should result in a redirect
+}
+
+func dummyMiddleware(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
+	rw.Header().Add("M1", "V1")
+	next(rw, req)
+	rw.Header().Add("M2", "V2")
+}
+
+func dummyHandler(w http.ResponseWriter, req *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func TestUse(t *testing.T) {
+	r := NewRouter()
+
+	r.HandleFunc("/dummy", dummyHandler).Methods("GET").Use(dummyMiddleware)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/dummy", bytes.NewBuffer([]byte("dfs")))
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Code %v does not match expected code 200.\n", w.Code)
+	}
+	if w.Header().Get("M1") != "V1" || w.Header().Get("M2") != "V2" {
+		t.Error("Headers do not match expected values.")
+	}
 }
 
 func TestHost(t *testing.T) {
