@@ -98,6 +98,14 @@ func (r *Route) GetHandler() http.Handler {
 	return r.handler
 }
 
+// Use wraps middlware around the existing handler for a route
+func (r *Route) Use(m func(http.ResponseWriter, *http.Request, http.HandlerFunc)) *Route {
+	h := r.handler
+	return r.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		m(w, req, h.ServeHTTP)
+	})
+}
+
 // Name -----------------------------------------------------------------------
 
 // Name sets the name for the route, used to build URLs.
