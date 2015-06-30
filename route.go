@@ -100,9 +100,9 @@ func (r *Route) GetHandler() http.Handler {
 
 // Use wraps middlware around the existing handler for a route
 func (r *Route) Use(m func(http.ResponseWriter, *http.Request, http.HandlerFunc)) *Route {
-	f := r.handler.ServeHTTP
+	h := r.handler
 	return r.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		m(w, req, f)
+		m(w, req, h.ServeHTTP)
 	})
 }
 
